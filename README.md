@@ -23,7 +23,10 @@ The new interface displays the related contents and utilities in parallel as a u
   - [CocoaPods](#cocoapods)
   - [Carthage](#carthage)
 - [Getting Started](#getting-started)
+  - [Add a floating panel as a chile view controller](#add-a-floating-panel-as-a-chile-view-controller)
+  - [Present a floating panel as a modality](#present-a-floating-panel-as-a-modality)
 - [Usage](#usage)
+  - [Show and Hide a floating panel in a view with your view heirarchy](#show-and-hide-a-floating-panel-in-a-view-with-your-view-heirarchy)
   - [Customize the layout with `FloatingPanelLayout` protocol](#customize-the-layout-with-floatingpanellayout-protocol)
     - [Change the initial position and height](#change-the-initial-position-and-height)
     - [Support your landscape layout](#support-your-landscape-layout)
@@ -52,6 +55,7 @@ The new interface displays the related contents and utilities in parallel as a u
 - [x] Layout customization for all trait environments(i.e. Landscape orientation support)
 - [x] Behavior customization
 - [x] Free from common issues of Auto Layout and gesture handling
+- [x] Modal presentation
 
 Examples are here.
 
@@ -84,6 +88,8 @@ github "scenee/FloatingPanel"
 
 ## Getting Started
 
+### Add a floating panel as a chile view controller
+
 ```swift
 import UIKit
 import FloatingPanel
@@ -112,14 +118,65 @@ class ViewController: UIViewController, FloatingPanelControllerDelegate {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+
         // Remove the views managed by the `FloatingPanelController` object from self.view.
         fpc.removePanelFromParent()
+    }
+}
+```
+
+### Present a floating panel as a modality
+
+```swift
+import UIKit
+import FloatingPanel
+
+class ViewController: UIViewController, FloatingPanelControllerDelegate {
+    ...
+    @IBAction func buttonTapped(sender: UIButton) {
+        // Initialize a `FloatingPanelController` object.
+        fpc = FloatingPanelController()
+
+        let fpc = FloatingPanelController()
+        let contentVC = ...
+        fpc.set(contentViewController: contentVC)
+        fpc.delegate = self
+
+        fpc.isRemovalInteractionEnabled = true
+
+        self.present(fpc, animated: true, completion: nil)
     }
     ...
 }
 ```
 
 ## Usage
+
+### Show and Hide a floating panel in a view with your view heirarchy
+
+```swift
+// Add FloatingPanelController and the managed views to a view controller.
+// From the second time, just call `show(animated:completion)`.
+view.addSubview(fpc.view)
+fpc.view.frame = view.bounds // MUST
+parent.addChild(fpc)
+
+fpc.show(animated: true) {
+    self.didMove(toParent: self)
+}
+
+...
+
+// Hide
+fpc.hide(animated: true) {
+    // If needed
+    self.willMove(toParent: nil)
+    self.view.removeFromSuperview()
+    self.removeFromParent()
+}
+```
+
+NOTE: `FloatingPanelController` wraps `show`/`hide` with `addPanel`/`removePanelFromParent` to easy to use. But `show`/`hide` are more convienent for your app.
 
 ### Customize the layout with `FloatingPanelLayout` protocol
 
@@ -323,7 +380,7 @@ class ViewController: UIViewController, FloatingPanelControllerDelegate {
 
 ### 'Show' or 'Show Detail' Segues from `FloatingPanelController`'s content view controller
 
-'Show' or 'Show Detail' segues from a content view controller will be managed by a view controller(hereinafter called 'master VC') adding a floating panel. Because a floating panel is just a subview of the master VC.
+'Show' or 'Show Detail' segues from a content view controller will be managed by a view controller(hereinafter called 'master VC') adding a floating panel. Because a floating panel is just a subview of the master VC(except for modality).
 
 `FloatingPanelController` has no way to manage a stack of view controllers like `UINavigationController`. If so, it would be so complicated and the interface will become `UINavigationController`. This component should not have the responsibility to manage the stack.
 
